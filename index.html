@@ -1,0 +1,1012 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#CBC3F0" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="Gastos" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="icon.svg" />
+    <link rel="icon" href="icon.svg" />
+    <title>Gastos</title>
+    <style>
+      /* =====================================================
+   TOKENS — paleta Cloud Dancer + pasteles armónicos
+   ===================================================== */
+      :root {
+        /* Base */
+        --bg: #f0eee9;
+        --card: #fbfaf7;
+        --ink: #2b3042;
+        --mut: #7a8094;
+        --line: #e8e6e0;
+
+        /* Pasteles: par [fondo suave, texto/icono intenso] */
+        --lav-s: #cbc3f0;
+        --lav: #6c5fc7;
+        --mint-s: #bfe6d8;
+        --mint: #2f8f72;
+        --pch-s: #f8d2be;
+        --pch: #d9733f;
+        --sky-s: #bfddf3;
+        --sky: #3c86c4;
+        --rose-s: #f3c6d8;
+        --rose: #c9578a;
+        --but-s: #f5e6b0;
+        --but: #a8861f;
+        --sage-s: #d3e3c0;
+        --sage: #5e8a3a;
+        --sand-s: #e4d9c8;
+        --sand: #8a7656;
+
+        /* Semánticos */
+        --ind: #6c5fc7;
+        --ok: #5e8a3a;
+        --ok-s: #d3e3c0;
+        --warn: #a8861f;
+        --warn-s: #f5e6b0;
+        --over: #c9578a;
+        --over-s: #f3c6d8;
+
+        /* Forma */
+        --r-card: 24px;
+        --r-chip: 999px;
+        --shadow: 0 8px 30px rgba(43, 48, 66, 0.06);
+
+        /* Safe area */
+        --sat: env(safe-area-inset-top);
+        --sab: env(safe-area-inset-bottom);
+      }
+
+      /* Modo oscuro: mismos pasteles, más luminosos en texto, menos saturados en fondos */
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #14161f;
+          --card: #1e212d;
+          --ink: #e8e6f0;
+          --mut: #8a8fa8;
+          --line: #2a2d3a;
+          --lav-s: #2d2a45;
+          --lav: #9d94e8;
+          --mint-s: #1a3028;
+          --mint: #5abfa0;
+          --pch-s: #3a2418;
+          --pch: #f09060;
+          --sky-s: #182838;
+          --sky: #70b8ee;
+          --rose-s: #38182a;
+          --rose: #e888b5;
+          --but-s: #2e2808;
+          --but: #d4af45;
+          --sage-s: #1c2c14;
+          --sage: #90bf60;
+          --sand-s: #28221a;
+          --sand: #c0a882;
+          --ind: #9d94e8;
+          --ok: #90bf60;
+          --ok-s: #1c2c14;
+          --warn: #d4af45;
+          --warn-s: #2e2808;
+          --over: #e888b5;
+          --over-s: #38182a;
+        }
+      }
+
+      /* =====================================================
+   RESET / BASE
+   ===================================================== */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        /* Inter como primera opción, fallback system-ui */
+        font:
+          15px/1.5 "Inter",
+          "Plus Jakarta Sans",
+          system-ui,
+          -apple-system,
+          sans-serif;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+      }
+      button {
+        cursor: pointer;
+        font: inherit;
+      }
+      a {
+        color: inherit;
+      }
+
+      /* =====================================================
+   LAYOUT
+   ===================================================== */
+      #app {
+        max-width: 480px;
+        margin: 0 auto;
+        /* espacio para nav flotante + safe area inferior */
+        padding-bottom: calc(96px + var(--sab));
+        min-height: 100dvh;
+      }
+
+      /* =====================================================
+   CABECERA — orgánica con ola inferior y decoración
+   ===================================================== */
+      header {
+        background: linear-gradient(140deg, var(--lav-s) 0%, var(--pch-s) 100%);
+        padding: calc(18px + var(--sat)) 0 0;
+        position: relative;
+        overflow: hidden; /* para contener los círculos */
+      }
+
+      /* Tres esferas decorativas en el fondo */
+      .hdr-deco {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        overflow: hidden;
+      }
+      .hdr-c1 {
+        /* grande, arriba-derecha */
+        position: absolute;
+        width: 240px;
+        height: 240px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.18);
+        top: -80px;
+        right: -55px;
+      }
+      .hdr-c2 {
+        /* mediana, izquierda */
+        position: absolute;
+        width: 160px;
+        height: 160px;
+        border-radius: 50%;
+        background: rgba(108, 95, 199, 0.1);
+        top: 4px;
+        left: -65px;
+      }
+      .hdr-c3 {
+        /* pequeña, centro-derecha */
+        position: absolute;
+        width: 88px;
+        height: 88px;
+        border-radius: 50%;
+        background: rgba(217, 115, 63, 0.13);
+        bottom: 55px;
+        right: 76px;
+      }
+      @media (prefers-color-scheme: dark) {
+        .hdr-c1 {
+          background: rgba(255, 255, 255, 0.05);
+        }
+        .hdr-c2 {
+          background: rgba(157, 148, 232, 0.11);
+        }
+        .hdr-c3 {
+          background: rgba(240, 144, 96, 0.08);
+        }
+      }
+
+      /* Contenido de la cabecera */
+      .hdr-content {
+        position: relative;
+        padding: 0 20px 20px;
+      }
+
+      .top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      header h1 {
+        margin: 0;
+        font-size: 17px;
+        font-weight: 700;
+        color: var(--ink);
+        letter-spacing: -0.3px;
+      }
+
+      /* Botón ajustes */
+      .ib {
+        background: rgba(255, 255, 255, 0.55);
+        border: 0;
+        color: var(--ink);
+        border-radius: 12px;
+        width: 40px;
+        height: 40px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        transition:
+          transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1),
+          background 200ms;
+      }
+      .ib:active {
+        transform: scale(0.93);
+      }
+
+      /* Selector de mes — píldora glassmorphism */
+      .month {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        margin-top: 16px;
+      }
+      /* tarjeta de cristal con nombre y año */
+      .month-pill {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.44);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.68);
+        border-radius: 20px;
+        padding: 8px 30px;
+        min-width: 174px;
+        box-shadow:
+          0 4px 20px rgba(43, 48, 66, 0.07),
+          0 1px 0 rgba(255, 255, 255, 0.6) inset;
+      }
+      @media (prefers-color-scheme: dark) {
+        .month-pill {
+          background: rgba(30, 33, 45, 0.55);
+          border-color: rgba(255, 255, 255, 0.1);
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+        }
+      }
+      /* nombre del mes grande */
+      .month-name {
+        font-size: 22px;
+        font-weight: 800;
+        color: var(--ink);
+        letter-spacing: -0.7px;
+        line-height: 1.15;
+      }
+      /* año pequeño debajo */
+      .month-year {
+        font-size: 11px;
+        color: var(--mut);
+        font-weight: 600;
+        letter-spacing: 0.4px;
+        margin-top: 1px;
+        text-transform: uppercase;
+      }
+      /* botones de flecha */
+      .month button {
+        background: rgba(255, 255, 255, 0.46);
+        border: 1px solid rgba(255, 255, 255, 0.55);
+        color: var(--ink);
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+      .month button:active {
+        transform: scale(0.88);
+      }
+
+      /* Ola SVG de transición al contenido */
+      .hdr-wave {
+        display: block;
+        width: 100%;
+        /* fill:var(--bg) se aplica inline en el <path> del SVG */
+      }
+
+      /* =====================================================
+   MAIN
+   ===================================================== */
+      main {
+        padding: 0 14px;
+        margin-top: -6px;
+      }
+
+      /* =====================================================
+   TARJETAS — aire y sombra difusa
+   ===================================================== */
+      .card {
+        background: var(--card);
+        border-radius: var(--r-card);
+        padding: 20px;
+        margin-bottom: 12px;
+        box-shadow: var(--shadow);
+        /* entrada escalonada: fade + translateY */
+        animation: fadeUp 280ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+      }
+      .card:nth-child(2) {
+        animation-delay: 55ms;
+      }
+      .card:nth-child(3) {
+        animation-delay: 110ms;
+      }
+      .card:nth-child(4) {
+        animation-delay: 165ms;
+      }
+
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* etiqueta de sección */
+      .card h2 {
+        margin: 0 0 14px;
+        font-size: 10px;
+        font-weight: 700;
+        color: var(--mut);
+        letter-spacing: 1px;
+        text-transform: uppercase;
+      }
+
+      /* =====================================================
+   HÉROE — cifra principal
+   ===================================================== */
+      .total {
+        font-size: 46px;
+        font-weight: 700;
+        letter-spacing: -2px;
+        line-height: 1;
+        /* números tabulares para que no baile el ancho */
+        font-variant-numeric: tabular-nums;
+      }
+      .sub {
+        color: var(--mut);
+        font-size: 13px;
+        margin-top: 4px;
+      }
+
+      /* chip de variación */
+      .delta {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        font-size: 11px;
+        font-weight: 700;
+        border-radius: var(--r-chip);
+        padding: 3px 10px;
+        margin-left: 8px;
+        vertical-align: middle;
+      }
+      .up {
+        background: var(--over-s);
+        color: var(--over);
+      }
+      .dn {
+        background: var(--ok-s);
+        color: var(--ok);
+      }
+
+      /* barra de reparto horizontal */
+      .split {
+        display: flex;
+        height: 8px;
+        border-radius: var(--r-chip);
+        overflow: hidden;
+        margin-top: 14px;
+        background: var(--line);
+      }
+      .split i {
+        height: 100%;
+        border-radius: var(--r-chip);
+        transition: flex 450ms cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+
+      /* píldoras de tipo de tarjeta */
+      .chips {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+      }
+      .chip {
+        flex: 1;
+        min-width: 88px;
+        border-radius: 18px;
+        padding: 12px 14px;
+        transition: transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+      .chip:active {
+        transform: scale(0.97);
+      }
+      .chip small {
+        display: block;
+        font-size: 10px;
+        font-weight: 700;
+        opacity: 0.7;
+        letter-spacing: 0.7px;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+      }
+      .chip b {
+        font-size: 16px;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* =====================================================
+   DONUT — SVG con segmentos redondeados
+   ===================================================== */
+      .donutw {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .donut {
+        position: relative;
+        width: 170px;
+        height: 170px;
+        flex: none;
+      }
+      /* rota el SVG 90° para que el primer segmento empiece arriba */
+      .donut-svg {
+        transform: rotate(-90deg);
+      }
+      /* segmentos: aparecen con fade al cargar */
+      .dseg {
+        animation: segFade 400ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+      }
+      @keyframes segFade {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      .donut .mid {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 0 24px;
+        pointer-events: none;
+      }
+      .mid-cat {
+        font-size: 11px;
+        color: var(--mut);
+        font-weight: 600;
+        line-height: 1.2;
+      }
+      .mid-val {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: -1px;
+        font-variant-numeric: tabular-nums;
+        margin-top: 2px;
+      }
+      .mid-pct {
+        font-size: 11px;
+        color: var(--mut);
+        margin-top: 1px;
+      }
+
+      /* leyenda del donut */
+      .leg {
+        flex: 1;
+        min-width: 150px;
+      }
+      .leg div {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 7px 8px;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: background 150ms;
+      }
+      .leg div:active {
+        background: var(--line);
+      }
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex: none;
+      }
+      .leg span.n {
+        flex: 1;
+        font-size: 13px;
+      }
+      .leg span.v {
+        font-weight: 700;
+        font-size: 13px;
+        font-variant-numeric: tabular-nums;
+      }
+      .leg span.p {
+        color: var(--mut);
+        width: 36px;
+        text-align: right;
+        font-size: 11px;
+      }
+
+      /* =====================================================
+   BARRAS DE PRESUPUESTO — con degradado y marcador 80%
+   ===================================================== */
+      .bar {
+        height: 10px;
+        background: var(--line);
+        border-radius: var(--r-chip);
+        overflow: hidden;
+      }
+      .bar i {
+        display: block;
+        height: 100%;
+        border-radius: var(--r-chip);
+        transition: width 550ms cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+      /* wrapper para el marcador del 80% */
+      .bar-wrap {
+        position: relative;
+        margin-top: 4px;
+      }
+      .bar-mark {
+        position: absolute;
+        top: -3px;
+        bottom: -3px;
+        width: 2px;
+        border-radius: 1px;
+        background: var(--ink);
+        opacity: 0.15;
+        pointer-events: none;
+      }
+
+      /* =====================================================
+   PRESUPUESTOS — filas
+   ===================================================== */
+      .brow {
+        padding: 12px 0;
+        border-top: 1px solid var(--line);
+      }
+      .brow:first-of-type {
+        border: 0;
+      }
+      .brow .l {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+      .brow .brow-msg {
+        font-size: 12px;
+        font-weight: 600;
+        margin-top: 6px;
+      }
+
+      /* bud-hero: resumen total en pestaña Inicio */
+      .bud-nums {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 8px;
+      }
+      .bud-nums b {
+        font-size: 18px;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+      }
+      .bud-nums span {
+        font-size: 13px;
+        color: var(--mut);
+      }
+
+      /* =====================================================
+   BUSCADOR Y CHIPS DE FILTRO
+   ===================================================== */
+      input[type="search"],
+      input[type="text"],
+      input[type="password"] {
+        width: 100%;
+        border: 0;
+        background: var(--bg);
+        color: var(--ink);
+        border-radius: var(--r-chip);
+        padding: 12px 18px;
+        font-size: 15px;
+        margin-bottom: 10px;
+        outline: none;
+        transition: box-shadow 200ms;
+      }
+      input[type="search"]:focus,
+      input[type="text"]:focus,
+      input[type="password"]:focus {
+        box-shadow: 0 0 0 2px var(--lav);
+      }
+      input[type="search"]::placeholder {
+        color: var(--mut);
+      }
+
+      /* scroll horizontal sin scrollbar visible */
+      .fchips {
+        display: flex;
+        gap: 6px;
+        overflow-x: auto;
+        padding-bottom: 6px;
+        margin-bottom: 6px;
+        scrollbar-width: none;
+      }
+      .fchips::-webkit-scrollbar {
+        display: none;
+      }
+      .fchips button {
+        white-space: nowrap;
+        flex: none;
+        border: 1.5px solid var(--line);
+        background: var(--card);
+        color: var(--mut);
+        border-radius: var(--r-chip);
+        padding: 6px 14px;
+        font-size: 13px;
+        font-weight: 600;
+        transition: all 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+      .fchips button.on {
+        background: var(--ind);
+        color: #fff;
+        border-color: var(--ind);
+        box-shadow: 0 4px 12px rgba(108, 95, 199, 0.28);
+      }
+
+      /* =====================================================
+   MOVIMIENTOS — lista agrupada por día
+   ===================================================== */
+      /* encabezado de día: sticky para que flote al desplazar */
+      .day {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--mut);
+        margin: 16px 4px 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.7px;
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: var(--bg);
+        padding: 2px 0;
+      }
+      /* ítem de movimiento */
+      .mv {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 12px 16px;
+        background: var(--card);
+        border-radius: 18px;
+        margin-bottom: 6px;
+        width: 100%;
+        border: 0;
+        color: inherit;
+        text-align: left;
+        font: inherit;
+        box-shadow: 0 2px 8px rgba(43, 48, 66, 0.04);
+        transition:
+          transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1),
+          box-shadow 200ms;
+        animation: fadeUp 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+      }
+      .mv:active {
+        transform: scale(0.98);
+        box-shadow: 0 1px 4px rgba(43, 48, 66, 0.03);
+      }
+      /* avatar de categoría */
+      .mv .ic {
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 800;
+        flex: none;
+        letter-spacing: -0.3px;
+      }
+      .mv .t {
+        flex: 1;
+        min-width: 0;
+      }
+      .mv .t b {
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .mv .t small {
+        color: var(--mut);
+        font-size: 12px;
+      }
+      .mv .a {
+        font-weight: 700;
+        font-size: 15px;
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* =====================================================
+   NAV FLOTANTE — píldora con vidrio
+   ===================================================== */
+      nav {
+        position: fixed;
+        left: 50%;
+        transform: translateX(-50%);
+        /* se ajusta al ancho de viewport hasta el máximo del layout */
+        width: calc(min(100vw, 480px) - 24px);
+        bottom: calc(10px + var(--sab));
+        /* efecto vidrio */
+        background: rgba(251, 250, 247, 0.9);
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.65);
+        border-radius: 24px;
+        display: flex;
+        padding: 5px;
+        z-index: 10;
+        box-shadow:
+          0 8px 32px rgba(43, 48, 66, 0.12),
+          0 2px 8px rgba(43, 48, 66, 0.06);
+      }
+      @media (prefers-color-scheme: dark) {
+        nav {
+          background: rgba(30, 33, 45, 0.9);
+          border-color: rgba(255, 255, 255, 0.07);
+        }
+      }
+      nav button {
+        flex: 1;
+        background: none;
+        border: 0;
+        color: var(--mut);
+        padding: 8px 4px;
+        font-size: 9.5px;
+        font-weight: 700;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+        border-radius: 18px;
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
+        transition:
+          color 200ms,
+          background 200ms,
+          box-shadow 200ms;
+      }
+      /* icono SVG dentro del botón */
+      nav button span {
+        display: block;
+        line-height: 0;
+      }
+      /* pestaña activa: fondo índigo + sombra */
+      nav button.on {
+        background: var(--ind);
+        color: #fff;
+        box-shadow: 0 4px 14px rgba(108, 95, 199, 0.38);
+      }
+
+      /* =====================================================
+   BOTTOM SHEET — hoja inferior con animación
+   ===================================================== */
+      .sheet {
+        position: fixed;
+        inset: 0;
+        background: rgba(20, 22, 31, 0.5);
+        z-index: 20;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        animation: fadeIn 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      /* panel */
+      .sheet > div {
+        background: var(--card);
+        width: 100%;
+        max-width: 480px;
+        border-radius: 28px 28px 0 0;
+        padding: 0 20px calc(20px + var(--sab));
+        max-height: 85vh;
+        overflow: auto;
+        animation: slideUp 280ms cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+      @keyframes slideUp {
+        from {
+          transform: translateY(100%);
+        }
+        to {
+          transform: translateY(0);
+        }
+      }
+      /* tirador de la hoja */
+      .sheet-handle {
+        width: 40px;
+        height: 4px;
+        background: var(--line);
+        border-radius: 2px;
+        margin: 12px auto 18px;
+      }
+      .sheet h3 {
+        margin: 0 0 4px;
+        font-size: 18px;
+        font-weight: 700;
+      }
+
+      /* opciones de categoría en el sheet */
+      .opt {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 14px;
+      }
+      .opt button {
+        border: 0;
+        border-radius: 14px;
+        padding: 10px 16px;
+        font-size: 14px;
+        font-weight: 600;
+        transition: transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+      .opt button:active {
+        transform: scale(0.95);
+      }
+
+      /* =====================================================
+   BOTÓN PRIMARIO
+   ===================================================== */
+      .btn {
+        background: var(--ind);
+        color: #fff;
+        border: 0;
+        border-radius: 16px;
+        padding: 14px 20px;
+        font-size: 15px;
+        font-weight: 700;
+        width: 100%;
+        margin-top: 10px;
+        box-shadow: 0 4px 16px rgba(108, 95, 199, 0.3);
+        transition:
+          transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1),
+          box-shadow 200ms;
+      }
+      .btn:active {
+        transform: scale(0.98);
+        box-shadow: 0 2px 8px rgba(108, 95, 199, 0.18);
+      }
+
+      /* =====================================================
+   MISCELÁNEA
+   ===================================================== */
+      .note {
+        font-size: 12px;
+        color: var(--mut);
+        margin: 8px 2px;
+        line-height: 1.55;
+      }
+      /* banner demo/offline */
+      .demo {
+        background: var(--but-s);
+        color: var(--but);
+        border-radius: 14px;
+        padding: 10px 14px;
+        font-size: 12px;
+        font-weight: 600;
+        margin-bottom: 12px;
+      }
+      .empty {
+        text-align: center;
+        color: var(--mut);
+        padding: 36px 0;
+        font-size: 14px;
+      }
+
+      /* leyenda en tendencias */
+      .tend-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 12px;
+      }
+      .tend-legend span {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        color: var(--mut);
+        font-weight: 600;
+      }
+
+      /* shimmer para skeleton (reservado para futuros estados de carga) */
+      .skel {
+        background: linear-gradient(
+          90deg,
+          var(--line) 25%,
+          var(--bg) 50%,
+          var(--line) 75%
+        );
+        background-size: 200% 100%;
+        animation: shimmer 1.4s infinite;
+        border-radius: 8px;
+        height: 14px;
+      }
+      @keyframes shimmer {
+        from {
+          background-position: 200% 0;
+        }
+        to {
+          background-position: -200% 0;
+        }
+      }
+
+      /* =====================================================
+   REDUCCIÓN DE MOVIMIENTO — respeta la preferencia
+   ===================================================== */
+      @media (prefers-reduced-motion: reduce) {
+        .card,
+        .mv,
+        .sheet > div,
+        .dseg,
+        nav button,
+        .split i,
+        .bar i {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+
+      /* =====================================================
+   RESPONSIVE — tablet: centrado, pantalla grande
+   ===================================================== */
+      @media (min-width: 640px) {
+        main {
+          padding: 0 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <nav id="nav"></nav>
+    <div id="modal"></div>
+    <script src="app.js"></script>
+  </body>
+</html>
