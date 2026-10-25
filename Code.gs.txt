@@ -1,5 +1,5 @@
-// AÑADE esto a tu Apps Script (junto a doPost y out). Mantén tu const TOKEN.
-// Sustituye tu doPost por la versión de abajo (añade la acción "categoria").
+const TOKEN = "fa688a04-4e31-4627-8489-ebd7724f1db9";
+
 
 function doGet(e) {
   if (!e.parameter || e.parameter.token !== TOKEN) return json({ error: "no autorizado" });
@@ -21,26 +21,33 @@ function doGet(e) {
   }
   const cats = ss.getSheetByName("Reglas").getRange("D2:D11").getValues().flat().filter(String);
   const lim = {};
-  const p = ss.getSheetByName("Presupuestos").getRange("B16:E25").getValues();
-  p.forEach(r => { if (r[0]) lim[r[0]] = Number(r[3]) || 0; });
+  const ps = ss.getSheetByName("Presupuestos");
+  const t = ps.getRange("B32:E42").getValues(); // fila 32: cabeceras (D, E = nombres de las cuentas)
+  const c1 = String(t[0][2]), c2 = String(t[0][3]);
+  lim[c1] = {}; lim[c2] = {};
+  for (let i = 1; i < t.length; i++) {
+    if (!t[i][0]) continue;
+    lim[c1][t[i][0]] = Number(t[i][2]) || 0;
+    lim[c2][t[i][0]] = Number(t[i][3]) || 0;
+  }
   gastos.sort((a, b) => b.f.localeCompare(a.f) || b.r - a.r);
   return json({ gastos: gastos, cats: cats, lim: lim });
 }
-
+ 
 function json(o) {
   return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
 }
-
+ 
 function doPost(e) {
   const d = JSON.parse(e.postData.contents);
   if (d.token !== TOKEN) return out("no autorizado");
   const sh = SpreadsheetApp.getActive().getSheetByName("Gastos");
-
+ 
   if (d.accion === "categoria") { // cambio desde la app
     sh.getRange(Number(d.fila), 6).setValue(d.categoria);
     return out("ok");
   }
-
+ 
   // --- alta desde el Atajo (igual que antes) ---
   const comercios = sh.getRange("B1:B" + sh.getMaxRows()).getValues();
   let ultima = 1;
@@ -52,3 +59,6 @@ function doPost(e) {
   if (sh.getRange(fila, 5).getFormula() === "") sh.getRange("E2").copyTo(sh.getRange(fila, 5));
   return out("ok");
 }
+
+
+function out(t) { return ContentService.createTextOutput(t); }

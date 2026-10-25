@@ -1,4 +1,4 @@
-const V='g2',F=['./','index.html','app.js','manifest.json','icon.svg'];
+const V='g3',F=['./','index.html','app.js','manifest.json','icon.svg'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(V).then(c=>c.addAll(F))));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==V).map(x=>caches.delete(x))))));
 self.addEventListener('fetch',e=>{const u=new URL(e.request.url);if(u.origin!==location.origin)return;

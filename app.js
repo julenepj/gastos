@@ -99,7 +99,10 @@ function demo() {
   g.sort((a,b) => b.f.localeCompare(a.f));
   return {
     gastos: g, cats,
-    lim:{Supermercado:350,Transporte:80,Restaurantes:150,Suscripciones:40,Compras:120,Salud:50,Ocio:80,Hogar:100}
+    lim:{
+      'Julen':      {Supermercado:200,Transporte:60,Restaurantes:100,Suscripciones:30,Compras:80,Salud:40,Ocio:60,Hogar:60},
+      'Compartida': {Supermercado:150,Transporte:20,Restaurantes:50, Suscripciones:10,Compras:40,Salud:10,Ocio:20,Hogar:40}
+    }
   };
 }
 
@@ -253,7 +256,7 @@ function home() {
   const cs = byCat(a);
   const dl = ptot ? Math.round((tot-ptot)/ptot*100) : null;
   const per = cards().map(t => ({t, v:sum(a.filter(g=>g.t===t))}));
-  const lim = Object.values(S.data.lim).reduce((s,x)=>s+(+x||0), 0);
+  const lim = Object.values(S.data.lim).reduce((s,acc) => s + Object.values(acc).reduce((a,v)=>a+(+v||0), 0), 0);
 
   // Color y degradado de la barra de presupuesto global
   const usoCol  = tot>lim ? 'var(--over)' : tot>lim*.8 ? 'var(--warn)' : 'var(--ok)';
@@ -420,48 +423,75 @@ window.setcat = async(r, c) => {
 /* =====================================================
    PESTAÑA PRESUPUESTOS
    ===================================================== */
-function pres() {
-  const a = inM(S.ym), m = Object.fromEntries(byCat(a)), L = S.data.lim;
-  const rows = S.data.cats.map(c => ({c, v:m[c]||0, l:+L[c]||0}));
+function presRows(rows) {
+  return rows.map(x => {
+    const p = x.l ? x.v/x.l : 0;
+    const pct = Math.min(100, p*100);
+    let barGrad, msg, msgCol;
+    if (!x.l) {
+      barGrad = 'var(--line)'; msg = 'Sin límite definido'; msgCol = 'var(--mut)';
+    } else if (p > 1) {
+      barGrad = 'linear-gradient(90deg,var(--over-s),var(--over))';
+      msg = `Te pasas ${eur(x.v-x.l)}`; msgCol = 'var(--over)';
+    } else if (p > .8) {
+      barGrad = 'linear-gradient(90deg,var(--warn-s),var(--warn))';
+      msg = `Te quedan ${eur(x.l-x.v)}`; msgCol = 'var(--warn)';
+    } else {
+      barGrad = 'linear-gradient(90deg,var(--ok-s),var(--ok))';
+      msg = `Te quedan ${eur(x.l-x.v)}`; msgCol = 'var(--ok)';
+    }
+    return `
+    <div class="brow">
+      <div class="l">
+        <b style="display:flex;align-items:center;gap:7px">
+          <i class="dot" style="background:${col(x.c)}"></i>${esc(x.c)}
+        </b>
+        <span style="font-variant-numeric:tabular-nums">
+          ${eur(x.v)}${x.l ? ` <span class="sub">/ ${eur(x.l)}</span>` : ''}
+        </span>
+      </div>
+      <div class="bar-wrap">
+        <div class="bar"><i style="width:${pct}%;background:${barGrad}"></i></div>
+        ${x.l && p < 1 ? `<div class="bar-mark" style="left:80%"></div>` : ''}
+      </div>
+      ${x.l ? `<div class="brow-msg" style="color:${msgCol}">${msg}</div>` : ''}
+    </div>`;
+  }).join('');
+}
 
-  return `
-  <div class="card">
-    <h2>Presupuesto por categoría</h2>
-    ${rows.map(x => {
-      const p = x.l ? x.v/x.l : 0;
-      const pct = Math.min(100, p*100);
-      let barGrad, msg, msgCol;
-      if (!x.l) {
-        barGrad = 'var(--line)'; msg = 'Sin límite definido'; msgCol = 'var(--mut)';
-      } else if (p > 1) {
-        barGrad = 'linear-gradient(90deg,var(--over-s),var(--over))';
-        msg = `Te pasas ${eur(x.v-x.l)}`; msgCol = 'var(--over)';
-      } else if (p > .8) {
-        barGrad = 'linear-gradient(90deg,var(--warn-s),var(--warn))';
-        msg = `Te quedan ${eur(x.l-x.v)}`; msgCol = 'var(--warn)';
-      } else {
-        barGrad = 'linear-gradient(90deg,var(--ok-s),var(--ok))';
-        msg = `Te quedan ${eur(x.l-x.v)}`; msgCol = 'var(--ok)';
-      }
-      return `
-      <div class="brow">
-        <div class="l">
-          <b style="display:flex;align-items:center;gap:7px">
-            <i class="dot" style="background:${col(x.c)}"></i>${esc(x.c)}
-          </b>
-          <span style="font-variant-numeric:tabular-nums">
-            ${eur(x.v)}${x.l ? ` <span class="sub">/ ${eur(x.l)}</span>` : ''}
-          </span>
-        </div>
-        <div class="bar-wrap">
-          <div class="bar"><i style="width:${pct}%;background:${barGrad}"></i></div>
-          ${x.l && p < 1 ? `<div class="bar-mark" style="left:80%"></div>` : ''}
-        </div>
-        ${x.l ? `<div class="brow-msg" style="color:${msgCol}">${msg}</div>` : ''}
-      </div>`;
-    }).join('')}
-  </div>
-  <div class="note">Los límites se editan en la pestaña Presupuestos del Sheet.</div>`;
+function pres() {
+  const a = inM(S.ym), L = S.data.lim;
+  const ts = cards();
+
+  // Match each account name to a transaction type (case-insensitive substring)
+  const matchType = acc => {
+    const k = acc.toLowerCase();
+    return ts.find(t => t.toLowerCase().includes(k) || k.includes(t.toLowerCase())) || null;
+  };
+
+  const cards_html = Object.entries(L).map(([acc, accLim]) => {
+    const mt = matchType(acc);
+    const filtered = mt ? a.filter(g => g.t === mt) : a;
+    const m = Object.fromEntries(byCat(filtered));
+    const rows = S.data.cats.map(c => ({c, v:m[c]||0, l:+accLim[c]||0}));
+    const accTot = rows.reduce((s,x)=>s+x.v, 0);
+    const accLimTot = rows.reduce((s,x)=>s+x.l, 0);
+    const tagColor = mt ? ccol(mt) : 'var(--ink)';
+    const tagBg    = mt ? cbgt(mt) : 'var(--line)';
+
+    return `
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <h2 style="margin:0">${esc(acc)}</h2>
+        <span style="background:${tagBg};color:${tagColor};border-radius:999px;padding:3px 12px;font-size:12px;font-weight:700">
+          ${eur(accTot)} / ${eur(accLimTot)}
+        </span>
+      </div>
+      ${presRows(rows)}
+    </div>`;
+  }).join('');
+
+  return cards_html + `<div class="note">Los límites se editan en la pestaña Presupuestos del Sheet.</div>`;
 }
 
 /* =====================================================
