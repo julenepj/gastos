@@ -1,0 +1,54 @@
+// AÑADE esto a tu Apps Script (junto a doPost y out). Mantén tu const TOKEN.
+// Sustituye tu doPost por la versión de abajo (añade la acción "categoria").
+
+function doGet(e) {
+  if (!e.parameter || e.parameter.token !== TOKEN) return json({ error: "no autorizado" });
+  const ss = SpreadsheetApp.getActive();
+  const sh = ss.getSheetByName("Gastos");
+  const n = sh.getLastRow();
+  const gastos = [];
+  if (n >= 2) {
+    const v = sh.getRange(2, 1, n - 1, 6).getValues(); // A..F
+    v.forEach((r, i) => {
+      if (r[1] === "" || !(r[0] instanceof Date)) return;
+      const cat = (r[5] || r[4] || "Sin categoría").toString();
+      gastos.push({
+        r: i + 2,
+        f: Utilities.formatDate(r[0], ss.getSpreadsheetTimeZone(), "yyyy-MM-dd"),
+        c: r[1].toString(), i: Number(r[2]) || 0, t: r[3].toString(), cat: cat
+      });
+    });
+  }
+  const cats = ss.getSheetByName("Reglas").getRange("D2:D11").getValues().flat().filter(String);
+  const lim = {};
+  const p = ss.getSheetByName("Presupuestos").getRange("B16:E25").getValues();
+  p.forEach(r => { if (r[0]) lim[r[0]] = Number(r[3]) || 0; });
+  gastos.sort((a, b) => b.f.localeCompare(a.f) || b.r - a.r);
+  return json({ gastos: gastos, cats: cats, lim: lim });
+}
+
+function json(o) {
+  return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  const d = JSON.parse(e.postData.contents);
+  if (d.token !== TOKEN) return out("no autorizado");
+  const sh = SpreadsheetApp.getActive().getSheetByName("Gastos");
+
+  if (d.accion === "categoria") { // cambio desde la app
+    sh.getRange(Number(d.fila), 6).setValue(d.categoria);
+    return out("ok");
+  }
+
+  // --- alta desde el Atajo (igual que antes) ---
+  const comercios = sh.getRange("B1:B" + sh.getMaxRows()).getValues();
+  let ultima = 1;
+  for (let i = 0; i < comercios.length; i++) if (comercios[i][0] !== "") ultima = i + 1;
+  const fila = ultima + 1;
+  const importe = parseFloat(String(d.importe).replace(",", "."));
+  sh.getRange(fila, 1, 1, 4).setValues([[new Date(), d.comercio, importe, d.tarjeta]]);
+  sh.getRange(fila, 1).setNumberFormat("dd/MM/yyyy");
+  if (sh.getRange(fila, 5).getFormula() === "") sh.getRange("E2").copyTo(sh.getRange(fila, 5));
+  return out("ok");
+}
